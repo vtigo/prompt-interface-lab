@@ -9,4 +9,5 @@ dependencies = [
     "langchain[openai]>=0.3.27",
     "uvicorn>=0.35.0",
     "python-dotenv>=1.0.0",
+    "ruff>=0.12.5",
 ]
