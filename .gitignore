@@ -97,3 +97,6 @@ checkpoints/
 secrets/
 *.pem
 *.key
+
+# Claude
+.cloud
