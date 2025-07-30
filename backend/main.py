@@ -1,7 +1,5 @@
 """
 Main entry point for the FastAPI chat backend.
-
-This module sets up and runs the FastAPI application.
 """
 
 import logging
@@ -24,15 +22,12 @@ def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
 
-    This function sets up the FastAPI app with all necessary middleware
-    and routes, following explicit configuration patterns.
-
     Returns:
         Configured FastAPI application
     """
     app = FastAPI(
         title="AI Chat Backend",
-        description="A simple, reliable chat backend using FastAPI and LangChain",
+        description="A simple chat backend using FastAPI and LangChain",
         version="1.0.0",
     )
 

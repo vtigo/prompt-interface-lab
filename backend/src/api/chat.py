@@ -26,9 +26,6 @@ class ChatEndpoint:
         """
         Get or create a chat agent instance.
 
-        This implements lazy initialization to avoid startup failures
-        if OpenAI credentials are not available.
-
         Returns:
             ChatAgent instance
 
@@ -53,8 +50,7 @@ class ChatEndpoint:
         """
         Generate streaming response in Vercel AI SDK format.
 
-        This method handles the streaming protocol required by the Vercel AI SDK,
-        including proper error handling and format compliance.
+        This method handles the streaming protocol required by the Vercel AI SDK.
 
         Args:
             request: Validated chat request
@@ -78,18 +74,18 @@ class ChatEndpoint:
 
             response_chunks = []
             async for chunk in agent.generate_streaming_response(messages):
-                if chunk:
+                # TODO: check for other types (custom data, error messages)
+                if chunk and isinstance(chunk, str):
                     response_chunks.append(chunk)
 
                     stream_chunk = StreamChunk(type="text", content=chunk)
                     yield stream_chunk.to_stream_format()
 
-            full_response = "".join(response_chunks)
             finish_data = FinishData(
                 finishReason="stop",
                 usage={
                     "promptTokens": 0,  # TODO: Calculate actual usage
-                    "completionTokens": len(full_response.split()),
+                    "completionTokens": len(response_chunks),
                 },
             )
 

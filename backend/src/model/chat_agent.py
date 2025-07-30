@@ -19,12 +19,6 @@ logger = logging.getLogger(__name__)
 class ChatAgent:
     """
     A simple chat agent that handles conversations with OpenAI models.
-
-    This class implements defensive programming practices:
-    - Explicit error handling
-    - Input validation
-    - Clear configuration management
-    - Proper logging
     """
 
     def __init__(self, model_name: str = "gpt-3.5-turbo", temperature: float = 0.7):
@@ -57,10 +51,7 @@ class ChatAgent:
         self.temperature = temperature
 
         try:
-            # Initialize the OpenAI client through LangChain
-            self.llm = ChatOpenAI(
-                model=model_name, temperature=temperature
-            )
+            self.llm = ChatOpenAI(model=model_name, temperature=temperature)
             logger.info(f"ChatAgent initialized with model: {model_name}")
         except Exception as e:
             logger.error(f"Failed to initialize ChatOpenAI: {e}")
@@ -97,7 +88,6 @@ class ChatAgent:
             if not isinstance(content, str):
                 raise ValueError("Message content must be a string")
 
-            # Convert to appropriate LangChain message type
             if role == "user":
                 langchain_messages.append(HumanMessage(content=content))
             elif role == "assistant":
@@ -105,7 +95,6 @@ class ChatAgent:
             elif role == "system":
                 langchain_messages.append(SystemMessage(content=content))
             else:
-                # Log unknown role but continue processing
                 logger.warning(
                     f"Unknown message role: {role}, treating as human message"
                 )
@@ -131,14 +120,11 @@ class ChatAgent:
             raise ValueError("Messages list cannot be empty")
 
         try:
-            # Convert messages to LangChain format
             langchain_messages = self._convert_message_format(messages)
 
-            # Generate response
             logger.debug(f"Generating response for {len(messages)} messages")
             response = await self.llm.agenerate([langchain_messages])
 
-            # Extract the response text
             if not response.generations or not response.generations[0]:
                 raise RuntimeError("No response generated from the model")
 
@@ -151,7 +137,6 @@ class ChatAgent:
             return response_text
 
         except ValueError:
-            # Re-raise validation errors
             raise
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
@@ -203,11 +188,9 @@ def create_chat_agent(
     Returns:
         Configured ChatAgent instance
     """
-    # Use environment variables for defaults, with fallbacks
     default_model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
     default_temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
 
-    # Override with provided values
     final_model = model_name or default_model
     final_temperature = temperature if temperature is not None else default_temperature
 
