@@ -115,7 +115,7 @@ class StreamChunk(BaseModel):
     following the Vercel AI SDK format.
     """
 
-    type: Literal["text", "data", "error", "finish"] = Field(
+    type: Literal["text", "data", "error", "finish", "reasoning"] = Field(
         ..., description="Type of stream chunk"
     )
     content: str = Field(..., description="Chunk content")
@@ -135,6 +135,8 @@ class StreamChunk(BaseModel):
             return f"3:{json.dumps(self.content)}\n"
         elif self.type == "finish":
             return f"d:{self.content}\n"
+        elif self.type == "reasoning":
+            return f"g:{json.dumps(self.content)}\n"
         else:
             return f"0:{json.dumps(self.content)}\n"
 

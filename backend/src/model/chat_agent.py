@@ -257,7 +257,7 @@ class ChatAgent:
             messages: List of conversation messages
 
         Yields:
-            Text chunks or file data dictionaries
+            Text chunks, reasoning chunks, or file data dictionaries
 
         Raises:
             ValueError: If input is invalid
@@ -303,9 +303,31 @@ class ChatAgent:
 
             logger.debug(f"Generating streaming response for {len(messages)} messages")
 
+            # First, generate the normal response and stream it
+            full_response = []
             async for chunk in self.llm.astream(langchain_messages):
                 if hasattr(chunk, "content") and chunk.content:
+                    full_response.append(chunk.content)
                     yield chunk.content
+            
+            # After the response is complete, generate reasoning
+            if full_response:
+                reasoning_messages = langchain_messages + [
+                    AIMessage(content="".join(full_response)),
+                    SystemMessage(content="""
+Based on the response you just provided, briefly explain your reasoning process. 
+What were the key considerations and steps that led to your answer?
+Keep this concise and focused on your thought process.
+""")
+                ]
+                
+                reasoning_content = []
+                async for chunk in self.llm.astream(reasoning_messages):
+                    if hasattr(chunk, "content") and chunk.content:
+                        reasoning_content.append(chunk.content)
+                
+                if reasoning_content:
+                    yield {"type": "reasoning", "content": "".join(reasoning_content)}
 
         except ValueError:
             raise

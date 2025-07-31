@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useChat } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
 import { useEffect, useState } from 'react';
@@ -12,6 +13,13 @@ export default function Chat() {
     onError: (error) => {
       console.error('Chat error:', error);
     },
+    onFinish: (message) => {
+      console.log('Message finished:', message);
+      console.log('Message parts detail:', message.parts);
+      message.parts?.forEach((part, index) => {
+        console.log(`Part ${index}:`, part);
+      });
+    },
   });
 
   const [messageFiles, setMessageFiles] = useState<Record<string, any[]>>({});
@@ -22,8 +30,9 @@ export default function Chat() {
   const agentName = "Senno Scout"
 
   useEffect(() => {
-    console.log(data)
-    // Associate file data with the current assistant message
+    console.log('Data:', data)
+    console.log('Messages:', messages)
+    console.log('Latest message parts:', messages[messages.length - 1]?.parts)
     if (data && data.length > 0 && messages.length > 0) {
       const lastAssistantMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
       if (lastAssistantMessage) {
@@ -45,10 +54,9 @@ export default function Chat() {
         <Button variant="ghost" onClick={() => setShowInfo(prev => !prev)}>toggle info</Button>
       </div>
 
-      {
-        showInfo && <MessagesInfos messages={messages} />}
+      {showInfo && <MessagesInfos messages={messages} />}
 
-      <div className="flex-1 overflow-y-auto border border-black/[.08] dark:border-white/[.145] rounded-lg p-4 mb-4 bg-background">
+      <div className="flex-1 overflow-y-auto p-4 mb-4 bg-background">
         {messages.length === 0 ? (
           <div className="text-center text-foreground/50 mt-8">
             <p>Start a conversation by typing a message below.</p>
@@ -58,19 +66,14 @@ export default function Chat() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                className={`flex w-full min-w-full ${message.role === 'user' ? 'justify-end' : 'justify-start'
                   }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user'
-                    ? 'bg-foreground text-background'
-                    : 'bg-zinc-100 dark:bg-white/[.06] text-foreground'
-                    }`}
+                  className={`${message.role === 'user' ? 'p-3 rounded-2xl border' : "w-full"}`}
                 >
-                  <div className="text-xs font-medium mb-1 opacity-70">
-                    {message.role === 'user' ? userName : agentName}
-                  </div>
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+
+                  <div className="whitespace-pre-wrap font-medium">{message.content}</div>
 
                   {message.role === 'assistant' && messageFiles[message.id] && !isLoading && (
                     <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs">
@@ -85,6 +88,29 @@ export default function Chat() {
                           </pre>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {message.role === 'assistant' && message.parts && (
+                    <div className="mt-3 w-full">
+                      {message.parts
+                        .filter((part: any) => part.type === 'reasoning')
+                        .map((reasoningPart: any, index: number) => (
+                          <Accordion key={index} type="single" collapsible className="w-full border">
+                            <AccordionItem value={`reasoning-${index}`} className="w-full">
+                              <AccordionTrigger className="w-full px-3 py-2 text-xs font-medium hover:no-underline flex justify-between">
+                                <div className="flex items-center gap-2">
+                                  Mostrar Raciocínio
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-3 pb-3">
+                                <div className="text-sm whitespace-pre-wrap">
+                                  {reasoningPart.reasoning || reasoningPart.content || reasoningPart.text}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        ))}
                     </div>
                   )}
 
@@ -142,12 +168,15 @@ export default function Chat() {
 
 const MessagesInfos = ({ messages }: { messages: UIMessage[] }) => {
   return (
-    <div className={"flex-1 flex flex-col overflow-y-scroll"}>
+    <div className={"flex-1 flex flex-col overflow-y-scroll max-h-1/2 text-xs"}>
+      <div className="font-semibold mb-2">Message Debug Info:</div>
       {messages.map(message => (
-        <div className='whitespace-nowrap'>
-          <span>{message.id} - </span>
-          <span>{message.role}: </span>
-
+        <div key={message.id} className='mb-2 p-2 border rounded'>
+          <div><strong>ID:</strong> {message.id}</div>
+          <div><strong>Role:</strong> {message.role}</div>
+          <div><strong>Content:</strong> {message.content ? message.content.slice(0, 100) + '...' : 'None'}</div>
+          <div><strong>Reasoning Parts:</strong> {(message as any).parts?.filter((p: any) => p.type === 'reasoning').length || 0}</div>
+          <div><strong>Parts:</strong> {JSON.stringify((message as any).parts || 'None')}</div>
         </div>
       ))}
     </div>

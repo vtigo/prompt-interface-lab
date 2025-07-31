@@ -74,15 +74,18 @@ class ChatEndpoint:
 
             response_chunks = []
             async for chunk in agent.generate_streaming_response(messages):
-                if isinstance(chunk, dict) and chunk.get("type") == "file_data":
-                    file_data = chunk.get("data", {})
-                    data_chunk = StreamChunk(type="data", content=json.dumps(file_data))
-
-                    yield data_chunk.to_stream_format()
+                if isinstance(chunk, dict):
+                    if chunk.get("type") == "file_data":
+                        file_data = chunk.get("data", {})
+                        data_chunk = StreamChunk(type="data", content=json.dumps(file_data))
+                        yield data_chunk.to_stream_format()
+                    elif chunk.get("type") == "reasoning":
+                        reasoning_content = chunk.get("content", "")
+                        reasoning_chunk = StreamChunk(type="reasoning", content=reasoning_content)
+                        yield reasoning_chunk.to_stream_format()
                 elif chunk and isinstance(chunk, str):
                     response_chunks.append(chunk)
                     stream_chunk = StreamChunk(type="text", content=chunk)
-
                     yield stream_chunk.to_stream_format()
 
             finish_data = FinishData(
