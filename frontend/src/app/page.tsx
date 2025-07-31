@@ -113,6 +113,8 @@ const UserMessage = ({ message }: { message: UIMessage }) => {
 }
 
 const SystemMessage = ({ message, messageFiles, isLoading }: { message: UIMessage, messageFiles: Record<string, any[]>, isLoading: boolean }) => {
+  const [openValue, setOpenValue] = useState<string>("");
+
   return (
     <div className="flex w-full min-w-full justify-start">
       <div className="w-full">
@@ -128,23 +130,28 @@ const SystemMessage = ({ message, messageFiles, isLoading }: { message: UIMessag
           <div className="mt-4 w-full">
             {message.parts
               .filter((part: any) => part.type === 'reasoning')
-              .map((reasoningPart: any, index: number) => (
-                <Accordion key={index} type="single" collapsible className="w-ful border border-zinc-300 rounded">
-                  <AccordionItem value={`reasoning-${index}`} className="w-full">
-                    <AccordionTrigger className="w-full font-medium px-6 py-3 hover:no-underline flex justify-between">
-                      <div className="flex items-center gap-2 font-bold">
-                        <ReasoningCogs className="text-zinc-700 size-3" />
-                        Mostrar Raciocínio
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className='px-6'>
-                      <div className="text-sm whitespace-pre-wrap">
-                        {reasoningPart.reasoning || reasoningPart.content || reasoningPart.text}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              ))}
+              .map((reasoningPart: any, index: number) => {
+                const accordionValue = `reasoning-${index}`;
+                const isOpen = openValue === accordionValue;
+                
+                return (
+                  <Accordion key={index} type="single" collapsible className="w-ful border border-zinc-300 rounded" value={openValue} onValueChange={setOpenValue}>
+                    <AccordionItem value={accordionValue} className="w-full">
+                      <AccordionTrigger className="w-full font-medium px-6 py-3 hover:no-underline flex justify-between">
+                        <div className="flex items-center gap-2 font-bold">
+                          <ReasoningCogs className="text-zinc-700 size-3" />
+                          {isOpen ? 'Ocultar Raciocínio' : 'Mostrar Raciocínio'}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className='px-6'>
+                        <div className="text-sm whitespace-pre-wrap">
+                          {reasoningPart.reasoning || reasoningPart.content || reasoningPart.text}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                );
+              })}
           </div>
         )}
       </div>
