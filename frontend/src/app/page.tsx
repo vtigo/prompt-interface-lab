@@ -1,6 +1,8 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { useChat } from '@ai-sdk/react';
+import { useState } from 'react';
 
 export default function Chat() {
   const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
@@ -10,8 +12,9 @@ export default function Chat() {
       console.error('Chat error:', error);
     },
   });
-  const isLoading = status != "ready"
+  const [showInfo, setShowInfo] = useState(false)
 
+  const isLoading = status != "ready"
   const userName = "tigo"
   const agentName = "Senno Scout"
 
@@ -22,6 +25,17 @@ export default function Chat() {
         <p className="text-sm text-foreground/70">
           Proof of concept using Vercel's useChat hook with Data Stream Protocol
         </p>
+        <Button variant="ghost" onClick={() => setShowInfo(prev => !prev)}>toggle info</Button>
+      </div>
+
+      <div className={`flex-1 flex-col overflow-y-scroll ${showInfo ? "flex" : "hidden"}`}>
+        {messages.map(message => (
+          <div key={message.id} className="whitespace-pre-wrap">
+            {message.parts.map((part, i) => {
+              return <div key={`${message.id}-${i}`}>{message.role} - {message.id}:{part.type}</div>;
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="flex-1 overflow-y-auto border border-black/[.08] dark:border-white/[.145] rounded-lg p-4 mb-4 bg-background">
