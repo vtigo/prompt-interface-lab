@@ -1,0 +1,5 @@
+id,name,type,value
+1,Sample Item A,text,Hello World
+2,Sample Item B,number,42
+3,Sample Item C,boolean,true
+4,Sample Item D,text,AI Integration Test

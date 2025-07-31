@@ -1,0 +1,7 @@
+This is a sample text file for testing file streaming capabilities.
+It contains multiple lines of text to demonstrate file content retrieval.
+
+Key features:
+- File streaming integration
+- AI SDK compatibility
+- Secure file access from data directory

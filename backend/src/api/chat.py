@@ -74,10 +74,15 @@ class ChatEndpoint:
 
             response_chunks = []
             async for chunk in agent.generate_streaming_response(messages):
-                # TODO: check for other types (custom data, error messages)
-                if chunk and isinstance(chunk, str):
+                # Handle file data objects
+                if isinstance(chunk, dict) and chunk.get("type") == "file_data":
+                    file_data = chunk.get("data", {})
+                    # Send file data using the data stream protocol (type 2)
+                    data_chunk = StreamChunk(type="data", content=json.dumps(file_data))
+                    yield data_chunk.to_stream_format()
+                # Handle text chunks
+                elif chunk and isinstance(chunk, str):
                     response_chunks.append(chunk)
-
                     stream_chunk = StreamChunk(type="text", content=chunk)
                     yield stream_chunk.to_stream_format()
 

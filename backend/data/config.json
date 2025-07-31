@@ -1,0 +1,11 @@
+{
+  "app_name": "AI Chat Interface",
+  "version": "1.0.0",
+  "features": {
+    "file_streaming": true,
+    "chat_history": true,
+    "data_export": false
+  },
+  "supported_formats": ["txt", "json", "md", "csv", "log"],
+  "max_file_size": 1048576
+}

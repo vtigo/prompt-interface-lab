@@ -8,7 +8,9 @@ and error handling over complex features.
 
 import os
 import logging
-from typing import List, Dict, Any, Optional
+import json
+from pathlib import Path
+from typing import List, Dict, Any, Optional, AsyncGenerator, Union
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 
@@ -49,6 +51,11 @@ class ChatAgent:
 
         self.model_name = model_name
         self.temperature = temperature
+        
+        # Set up data directory path
+        self.data_dir = Path(__file__).parent.parent.parent / "data"
+        if not self.data_dir.exists():
+            logger.warning(f"Data directory does not exist: {self.data_dir}")
 
         try:
             self.llm = ChatOpenAI(model=model_name, temperature=temperature)
@@ -102,6 +109,104 @@ class ChatAgent:
 
         return langchain_messages
 
+    def read_file(self, filename: str) -> Dict[str, Any]:
+        """
+        Read a file from the data directory and return its contents.
+
+        Args:
+            filename: Name of the file to read
+
+        Returns:
+            Dictionary containing file information and content
+
+        Raises:
+            ValueError: If filename is invalid
+            FileNotFoundError: If file doesn't exist
+            RuntimeError: If file cannot be read
+        """
+        # Validate filename for security
+        if not isinstance(filename, str) or not filename.strip():
+            raise ValueError("Filename cannot be empty")
+        
+        # Prevent path traversal attacks
+        if ".." in filename or filename.startswith("/") or "\\" in filename:
+            raise ValueError("Invalid filename: path traversal not allowed")
+        
+        filename = filename.strip()
+        file_path = self.data_dir / filename
+        
+        # Ensure file is within data directory
+        try:
+            file_path = file_path.resolve()
+            self.data_dir.resolve()
+            if not str(file_path).startswith(str(self.data_dir.resolve())):
+                raise ValueError("File access outside data directory not allowed")
+        except Exception as e:
+            raise ValueError(f"Invalid file path: {e}")
+        
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {filename}")
+        
+        if not file_path.is_file():
+            raise ValueError(f"Path is not a file: {filename}")
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            file_info = {
+                "filename": filename,
+                "content": content,
+                "size": len(content.encode('utf-8')),
+                "path": str(file_path.relative_to(self.data_dir))
+            }
+            
+            logger.debug(f"Read file: {filename} ({file_info['size']} bytes)")
+            return file_info
+            
+        except UnicodeDecodeError:
+            raise RuntimeError(f"File is not text-readable: {filename}")
+        except Exception as e:
+            logger.error(f"Failed to read file {filename}: {e}")
+            raise RuntimeError(f"Failed to read file: {e}")
+
+    def _detect_file_requests(self, message_content: str) -> List[str]:
+        """
+        Detect file reading requests in message content.
+        
+        Args:
+            message_content: The message content to analyze
+            
+        Returns:
+            List of filenames requested
+        """
+        import re
+        
+        # Patterns to detect file reading requests
+        # Covers various ways users might request files
+        patterns = [
+            r'read\s+(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'show\s+(?:me\s+)?(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'get\s+(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'load\s+(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'open\s+(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'display\s+(?:the\s+)?(?:file\s+)?([^\s]+\.(?:txt|json|md|csv|log))',
+            r'contents?\s+of\s+([^\s]+\.(?:txt|json|md|csv|log))',
+            r'what\'?s\s+in\s+([^\s]+\.(?:txt|json|md|csv|log))',
+            # More flexible pattern for filenames mentioned in context
+            r'(?:file|document)\s+([^\s]+\.(?:txt|json|md|csv|log))',
+            # Pattern for quoted filenames
+            r'["\']([^"\']+\.(?:txt|json|md|csv|log))["\']'
+        ]
+        
+        filenames = []
+        for pattern in patterns:
+            matches = re.findall(pattern, message_content, re.IGNORECASE)
+            filenames.extend(matches)
+        
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(filenames))
+
     async def generate_response(self, messages: List[Dict[str, Any]]) -> str:
         """
         Generate a response to the conversation.
@@ -142,15 +247,15 @@ class ChatAgent:
             logger.error(f"Failed to generate response: {e}")
             raise RuntimeError(f"Failed to generate response: {e}")
 
-    async def generate_streaming_response(self, messages: List[Dict[str, Any]]):
+    async def generate_streaming_response(self, messages: List[Dict[str, Any]]) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
         """
-        Generate a streaming response to the conversation.
+        Generate a streaming response to the conversation, including file data when requested.
 
         Args:
             messages: List of conversation messages
 
         Yields:
-            Text chunks as they are generated
+            Text chunks or file data dictionaries
 
         Raises:
             ValueError: If input is invalid
@@ -160,7 +265,36 @@ class ChatAgent:
             raise ValueError("Messages list cannot be empty")
 
         try:
+            # Check the last user message for file requests
+            file_data_sent = []
+            file_contents = {}
+            if messages and messages[-1].get("role") == "user":
+                last_message = messages[-1].get("content", "")
+                requested_files = self._detect_file_requests(last_message)
+                
+                for filename in requested_files:
+                    try:
+                        file_info = self.read_file(filename)
+                        file_data_sent.append(filename)
+                        file_contents[filename] = file_info["content"]
+                        # Yield file data as a dictionary to be handled by the streaming response
+                        yield {"type": "file_data", "data": file_info}
+                        logger.info(f"File data sent for: {filename}")
+                    except Exception as e:
+                        logger.warning(f"Could not read requested file {filename}: {e}")
+                        # Continue with normal response even if file reading fails
+
             langchain_messages = self._convert_message_format(messages)
+
+            # If files were requested and sent, add them to the context with actual content
+            if file_data_sent:
+                context_parts = [f"The user requested the following files. Here are their contents:"]
+                for filename in file_data_sent:
+                    content = file_contents[filename]
+                    context_parts.append(f"\n--- File: {filename} ---\n{content}\n--- End of {filename} ---")
+                
+                context_message = "\n".join(context_parts)
+                langchain_messages.append(SystemMessage(content=context_message))
 
             logger.debug(f"Generating streaming response for {len(messages)} messages")
 
