@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FilePanel } from '@/components/file-panel';
 import { useChat } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
 import { useEffect, useState } from 'react';
@@ -23,7 +24,7 @@ export default function Chat() {
   });
 
   const [messageFiles, setMessageFiles] = useState<Record<string, any[]>>({});
-  const [showInfo, setShowInfo] = useState(false)
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
   const isLoading = status != "ready"
 
   useEffect(() => {
@@ -45,10 +46,10 @@ export default function Chat() {
         <p className="text-sm text-foreground/70">
           Proof of concept using Vercel's useChat hook with Data Stream Protocol
         </p>
-        <Button variant="ghost" onClick={() => setShowInfo(prev => !prev)}>toggle info</Button>
+        <Button variant="ghost" onClick={() => setShowDebugInfo(prev => !prev)}>toggle debug</Button>
       </div>
 
-      {showInfo && <MessagesInfos messages={messages} />}
+      {showDebugInfo && <MessagesInfos messages={messages} />}
 
       <div className="flex-1 overflow-y-auto p-4 mb-4 bg-background">
         {messages.length === 0 ? (
@@ -70,18 +71,8 @@ export default function Chat() {
                   <div className="whitespace-pre-wrap font-medium">{message.content}</div>
 
                   {message.role === 'assistant' && messageFiles[message.id] && !isLoading && (
-                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs">
-                      <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">File Data:</div>
-                      {messageFiles[message.id].map((item: any, idx) => (
-                        <div key={idx} className="mb-2">
-                          <div className="font-medium text-blue-600 dark:text-blue-400">
-                            📄 {item.filename} ({item.size} bytes)
-                          </div>
-                          <pre className="text-blue-700 dark:text-blue-300 overflow-x-auto text-xs mt-1 bg-white/50 dark:bg-white/5 p-2 rounded">
-                            {item.content}
-                          </pre>
-                        </div>
-                      ))}
+                    <div className="mt-2">
+                      <FilePanel files={messageFiles[message.id]} />
                     </div>
                   )}
 
