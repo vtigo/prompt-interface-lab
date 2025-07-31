@@ -23,16 +23,10 @@ export default function Chat() {
   });
 
   const [messageFiles, setMessageFiles] = useState<Record<string, any[]>>({});
-
   const [showInfo, setShowInfo] = useState(false)
   const isLoading = status != "ready"
-  const userName = "tigo"
-  const agentName = "Senno Scout"
 
   useEffect(() => {
-    console.log('Data:', data)
-    console.log('Messages:', messages)
-    console.log('Latest message parts:', messages[messages.length - 1]?.parts)
     if (data && data.length > 0 && messages.length > 0) {
       const lastAssistantMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
       if (lastAssistantMessage) {
@@ -122,15 +116,11 @@ export default function Chat() {
 
         {isLoading && (
           <div className="flex justify-start mt-4">
-            <div className="bg-black/[.05] dark:bg-white/[.06] text-foreground rounded-lg p-3">
-              <div className="text-xs font-medium mb-1 opacity-70">AI</div>
-              <div className="flex items-center space-x-1">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-                <span className="text-sm text-foreground/70 ml-2">AI is typing...</span>
+            <div className="flex items-center space-x-1">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
