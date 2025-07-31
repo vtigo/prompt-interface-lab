@@ -18,7 +18,7 @@ export function FilePanel({ files }: FilePanelProps) {
   return (
     <Sheet>
       <SheetTrigger asChild className='cursor-pointer'>
-        <Badge variant="secondary">
+        <Badge className='bg-zinc-500 text-zinc-100'>
           Files ({files.length})...
         </Badge>
       </SheetTrigger>

@@ -1,13 +1,16 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { UIMessage } from 'ai';
+import { useChat } from '@ai-sdk/react';
+
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { FilePanel } from '@/components/file-panel';
+import { BouncingDots } from '@/components/bouncing-dots';
 import { ReasoningCogs } from '@/components/icons/reasoning-cogs';
+
 import { ArrowRight } from 'lucide-react';
-import { useChat } from '@ai-sdk/react';
-import { UIMessage } from 'ai';
-import { useEffect, useState } from 'react';
 
 export default function Chat() {
   const { messages, data, input, handleInputChange, handleSubmit, status, error } = useChat({
@@ -28,6 +31,7 @@ export default function Chat() {
   const [messageFiles, setMessageFiles] = useState<Record<string, any[]>>({});
   const [showDebugInfo, setShowDebugInfo] = useState(false)
   const isLoading = status != "ready"
+  const conversationStarted = messages.length > 0
 
   useEffect(() => {
     if (data && data.length > 0 && messages.length > 0) {
@@ -55,21 +59,21 @@ export default function Chat() {
         {showDebugInfo && <MessagesInfos messages={messages} />}
 
         <div className="flex-1 overflow-y-auto p-4 mb-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-foreground/50 mt-8">
+
+          {!conversationStarted && (
+            <div className="text-center text-zinc-400 mt-8">
               <p>Start a conversation by typing a message below.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
+            </div>)
+          }
+
+          {conversationStarted && (
+            <div className="space-y-10">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex w-full min-w-full ${message.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
+                  className={`flex w-full min-w-full ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`${message.role === 'user' ? 'p-3 rounded-2xl border border-zinc-300' : "w-full"}`}
-                  >
+                  <div className={`${message.role === 'user' ? 'p-3 rounded-2xl border border-zinc-300' : "w-full"}`}>
 
                     <div className="whitespace-pre-wrap font-medium">{message.content}</div>
 
@@ -109,17 +113,8 @@ export default function Chat() {
             </div>
           )}
 
-          {isLoading && (
-            <div className="flex justify-start mt-4">
-              <div className="flex items-center space-x-1">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
+          {isLoading && <BouncingDots />}
+
         </div>
 
         {error && (
@@ -138,10 +133,24 @@ export default function Chat() {
         />
 
       </div>
+    </div >
+  );
+}
 
+const UserMessage = ({ message }: { message: UIMessage }) => {
+  return (
+    <div>
 
     </div>
-  );
+  )
+}
+
+const SystemMessage = ({ message }: { message: UIMessage }) => {
+  return (
+    <div>
+
+    </div>
+  )
 }
 
 const FormInput = ({
