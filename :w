@@ -188,8 +188,8 @@ const FormInput = ({
 
 const MessagesInfos = ({ messages }: { messages: UIMessage[] }) => {
   return (
-    <div className="flex-1 flex flex-col overflow-y-scroll max-h-1/2 text-xs p-3 border bg-yellow-50">
-      <div className="font-semibold mb-3">Message Debug Info:</div>
+    <div className="flex-1 flex flex-col overflow-y-scroll max-h-1/2 text-xs border bg-yellow-50">
+      <div className="font-semibold mb-2">Message Debug Info:</div>
       {messages.map(message => (
         <div key={message.id} className='mb-2 p-2 border rounded'>
           <div><strong>ID:</strong> {message.id}</div>
