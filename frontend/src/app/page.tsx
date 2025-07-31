@@ -2,21 +2,38 @@
 
 import { Button } from '@/components/ui/button';
 import { useChat } from '@ai-sdk/react';
-import { useState } from 'react';
+import { UIMessage } from 'ai';
+import { useEffect, useState } from 'react';
 
 export default function Chat() {
-  const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
+  const { messages, data, input, handleInputChange, handleSubmit, status, error } = useChat({
     api: 'http://localhost:8000/api/chat',
     streamProtocol: 'data',
     onError: (error) => {
       console.error('Chat error:', error);
     },
   });
-  const [showInfo, setShowInfo] = useState(false)
 
+  const [messageFiles, setMessageFiles] = useState<Record<string, any[]>>({});
+
+  const [showInfo, setShowInfo] = useState(false)
   const isLoading = status != "ready"
   const userName = "tigo"
   const agentName = "Senno Scout"
+
+  useEffect(() => {
+    console.log(data)
+    // Associate file data with the current assistant message
+    if (data && data.length > 0 && messages.length > 0) {
+      const lastAssistantMessage = messages.filter(m => m.role === 'assistant').slice(-1)[0];
+      if (lastAssistantMessage) {
+        setMessageFiles(prev => ({
+          ...prev,
+          [lastAssistantMessage.id]: data
+        }));
+      }
+    }
+  }, [data, messages])
 
   return (
     <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
@@ -28,15 +45,8 @@ export default function Chat() {
         <Button variant="ghost" onClick={() => setShowInfo(prev => !prev)}>toggle info</Button>
       </div>
 
-      <div className={`flex-1 flex-col overflow-y-scroll ${showInfo ? "flex" : "hidden"}`}>
-        {messages.map(message => (
-          <div key={message.id} className="whitespace-pre-wrap">
-            {message.parts.map((part, i) => {
-              return <div key={`${message.id}-${i}`}>{message.role} - {message.id}:{part.type}</div>;
-            })}
-          </div>
-        ))}
-      </div>
+      {
+        showInfo && <MessagesInfos messages={messages} />}
 
       <div className="flex-1 overflow-y-auto border border-black/[.08] dark:border-white/[.145] rounded-lg p-4 mb-4 bg-background">
         {messages.length === 0 ? (
@@ -54,13 +64,30 @@ export default function Chat() {
                 <div
                   className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user'
                     ? 'bg-foreground text-background'
-                    : 'bg-black/[.05] dark:bg-white/[.06] text-foreground'
+                    : 'bg-zinc-100 dark:bg-white/[.06] text-foreground'
                     }`}
                 >
                   <div className="text-xs font-medium mb-1 opacity-70">
                     {message.role === 'user' ? userName : agentName}
                   </div>
                   <div className="whitespace-pre-wrap">{message.content}</div>
+
+                  {message.role === 'assistant' && messageFiles[message.id] && !isLoading && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs">
+                      <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">File Data:</div>
+                      {messageFiles[message.id].map((item: any, idx) => (
+                        <div key={idx} className="mb-2">
+                          <div className="font-medium text-blue-600 dark:text-blue-400">
+                            📄 {item.filename} ({item.size} bytes)
+                          </div>
+                          <pre className="text-blue-700 dark:text-blue-300 overflow-x-auto text-xs mt-1 bg-white/50 dark:bg-white/5 p-2 rounded">
+                            {item.content}
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                 </div>
               </div>
             ))}
@@ -111,4 +138,18 @@ export default function Chat() {
 
     </div>
   );
+}
+
+const MessagesInfos = ({ messages }: { messages: UIMessage[] }) => {
+  return (
+    <div className={"flex-1 flex flex-col overflow-y-scroll"}>
+      {messages.map(message => (
+        <div className='whitespace-nowrap'>
+          <span>{message.id} - </span>
+          <span>{message.role}: </span>
+
+        </div>
+      ))}
+    </div>
+  )
 }

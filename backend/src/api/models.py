@@ -136,7 +136,6 @@ class StreamChunk(BaseModel):
         elif self.type == "finish":
             return f"d:{self.content}\n"
         else:
-            # Fallback - should not happen with Literal type
             return f"0:{json.dumps(self.content)}\n"
 
 
@@ -158,4 +157,3 @@ class FinishData(BaseModel):
             JSON string representation
         """
         return self.model_dump_json()
-
