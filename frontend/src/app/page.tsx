@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { FilePanel } from '@/components/file-panel';
+import { ReasoningCogs } from '@/components/icons/reasoning-cogs';  
 import { useChat } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
 import { useEffect, useState } from 'react';
@@ -86,6 +87,7 @@ export default function Chat() {
                               <AccordionItem value={`reasoning-${index}`} className="w-full">
                                 <AccordionTrigger className="w-full font-medium px-6 py-3 hover:no-underline flex justify-between">
                                   <div className="flex items-center gap-2 font-bold">
+                                    <ReasoningCogs className="text-zinc-700 size-3" />
                                     Mostrar Raciocínio
                                   </div>
                                 </AccordionTrigger>
