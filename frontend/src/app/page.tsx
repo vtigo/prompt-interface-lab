@@ -48,6 +48,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col bg-zinc-100 h-screen text-zinc-700">
       <div className='flex flex-col w-full max-w-4xl mx-auto h-full mt-6 p-4 overflow-hidden'>
+
         <div className="mb-4">
           <h1 className="text-2xl font-bold">Chat Interface</h1>
           <p className="text-sm">
